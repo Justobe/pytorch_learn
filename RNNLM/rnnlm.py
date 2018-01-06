@@ -5,8 +5,9 @@ from torch.autograd import Variable
 from numpy import *
 from torch.utils.data import DataLoader
 from mydataset import MyDataset
-
+from data_preprocess import get_data_list
 BATCH_SIZE = 5
+'''
 sentence_set = """When forty winters shall besiege thy brow,
 And dig deep trenches in thy beauty's field,
 Thy youth's proud livery so gazed on now,
@@ -21,8 +22,11 @@ Shall sum my count, and make my old excuse,'
 Proving his beauty by succession thine!
 This were to be new made when thou art old,
 And see thy blood warm when thou feel'st it cold.""".split()
+'''
+filename = "Hamlet.txt"
+sentence_set = get_data_list(filename)
 
-EMBDDING_DIM = len(sentence_set)+1
+EMBDDING_DIM = len(set(sentence_set))+1
 HIDDEN_UNITS = 200
 word_to_ix = {}
 for word in sentence_set:
@@ -50,24 +54,24 @@ for i in range(len(sentence_set) -2):
     data_labels.append(make_word_to_ix(label,word_to_ix))
 
 dataset = MyDataset(data_words, data_labels)
-train_loader = DataLoader(dataset, batch_size=BATCH_SIZE)
+train_loader = DataLoader(dataset, batch_size=BATCH_SIZE,shuffle=True)
 
 '''
-for _,batch in enumerate(train_loader):
+for x in enumerate(train_loader):
     print("word_batch------------>\n")
     print(batch[0])
     print("label batch----------->\n")
     print(batch[1])
 '''
-#'''
+
 class RNNModel(nn.Module):
+
     def __init__(self, embdding_size, hidden_size):
         super(RNNModel, self).__init__()
         self.rnn = nn.RNN(embdding_size, hidden_size,num_layers=1,nonlinearity='relu')
         self.linear = nn.Linear(hidden_size, embdding_size)
 
     def forward(self, x, hidden):
-        #input = x.view(BATCH_SIZE, -1)
         output1, h_n = self.rnn(x, hidden)
         output2 = self.linear(output1)
         log_prob = F.log_softmax(output2)
@@ -77,13 +81,13 @@ class RNNModel(nn.Module):
 rnnmodel = RNNModel(EMBDDING_DIM, HIDDEN_UNITS)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(rnnmodel.parameters(), lr=1e-3)
-#'''
+'''
 #testing
 #input_hidden = torch.autograd.Variable(torch.randn(BATCH_SIZE, HIDDEN_UNITS))
 #x = torch.autograd.Variable(torch.rand(BATCH_SIZE,EMBDDING_DIM))
 #y,_ = rnnmodel(x,input_hidden)
 #print(y)
-#''''
+#'''
 for epoch in range(3):
     print('epoch: {}'.format(epoch + 1))
     print('*' * 10)
@@ -102,15 +106,16 @@ for epoch in range(3):
         loss.backward(retain_graph=True)
         optimizer.step()
     print('Loss: {:.6f}'.format(running_loss / len(word_to_ix)))
-#'''
+
 #print(rnnmodel.state_dict().keys())
 
 
-f = open("res-0104-rnn.txt","w+")
+f = open("res-0106-rnn-v1.txt","w+")
 alpha = rnnmodel.state_dict()['rnn.weight_ih_l0']
 for word in sentence_set:
     #print(word,torch.unsqueeze(alpha[word_to_ix[word]],0).numpy())
-    line = word + " " +str(torch.unsqueeze(alpha[word_to_ix[word]],0).numpy().tolist()[0])+"\n"
+    line = word + "*" +str(torch.unsqueeze(alpha[word_to_ix[word]],0).numpy().tolist()[0])+"\n"
     #print(line)
     f.write(line)
 f.close()
+#'''
