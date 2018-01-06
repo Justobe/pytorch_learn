@@ -24,11 +24,13 @@ This were to be new made when thou art old,
 And see thy blood warm when thou feel'st it cold.""".split()
 '''
 filename = "Hamlet.txt"
-sentence_set = get_data_list(filename)
-
+sentence_set = get_data_list(filename)[:500]
+#print(sentence_set)
+VOCB_SIZE = len(sentence_set)
 EMBDDING_DIM = len(set(sentence_set))+1
 HIDDEN_UNITS = 200
 word_to_ix = {}
+
 for word in sentence_set:
     if word not in word_to_ix:
         word_to_ix[word] = len(word_to_ix)
@@ -112,9 +114,11 @@ for epoch in range(3):
 
 f = open("res-0106-rnn-v1.txt","w+")
 alpha = rnnmodel.state_dict()['rnn.weight_ih_l0']
+print(alpha)
 for word in sentence_set:
     #print(word,torch.unsqueeze(alpha[word_to_ix[word]],0).numpy())
-    line = word + "*" +str(torch.unsqueeze(alpha[word_to_ix[word]],0).numpy().tolist()[0])+"\n"
+    vec = alpha[:,word_to_ix[word]]
+    line = word + "*" +str(torch.unsqueeze(vec,0).numpy().tolist()[0])+"\n"
     #print(line)
     f.write(line)
 f.close()
